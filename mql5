@@ -1,0 +1,123 @@
+
+//+------------------------------------------------------------------+
+//|                           Prop Firm Challenge Manager            |
+//|                          Developer: Forex Robot Easy Team         |
+//|                         Website: forexroboteasy.com               |
+//+------------------------------------------------------------------+
+
+// Import necessary libraries
+#include <Trade\Trade.mqh>
+#include <Trade\SymbolInfo.mqh>
+#include <Timeseries\Series.mqh>
+
+// Define input parameters
+input double StopLoss = 50; // Stop loss in pips
+input double TakeProfit = 100; // Take profit in pips
+input bool UseNewsFilter = true; // Enable news filter
+input bool UseHoursFilter = true; // Enable hours filter
+
+void OnTick()
+{
+   // Get current bid and ask prices
+   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+
+   // Check if peaks and valleys pattern is formed
+   if (IsPeak() || IsValley())
+   {
+      // Check if current price is above the previous peak or below the previous valley
+      if (bid > High[1] || ask < Low[1])
+      {
+         // Place a buy order
+         Trade.Buy(_Symbol, 0.1, bid, bid - StopLoss, bid + TakeProfit, 'Buy order');
+
+         // Place a sell order
+         Trade.Sell(_Symbol, 0.1, ask, ask + StopLoss, ask - TakeProfit, 'Sell order');
+
+         // Send a notification to the trader
+         SendNotification('Order opened: Buy at ', DoubleToString(bid, _Digits));
+         SendNotification('Order opened: Sell at ', DoubleToString(ask, _Digits));
+      }
+   }
+}
+
+bool IsPeak()
+{
+   // Check if current candle is a peak
+   if (High[1] > High[2] && High[1] > High[0])
+   {
+      return true;
+   }
+
+   return false;
+}
+
+bool IsValley()
+{
+   // Check if current candle is a valley
+   if (Low[1] < Low[2] && Low[1] < Low[0])
+   {
+      return true;
+   }
+
+   return false;
+}
+
+void OnTrade()
+{
+   // Check if any order is closed
+   if (Trade.IsTrade())
+   {
+      // Send a notification to the trader
+      SendNotification('Order closed: ', Trade.Comment());
+   }
+}
+
+void OnTimer()
+{
+   // Check if news filter is enabled
+   if (UseNewsFilter)
+   {
+      // Check for relevant market news
+      if (IsNewsRelevant())
+      {
+         // Disable trading during news events
+         Trade.SetExpertEnabled(false);
+      }
+      else
+      {
+         // Enable trading after news events
+         Trade.SetExpertEnabled(true);
+      }
+   }
+
+   // Check if hours filter is enabled
+   if (UseHoursFilter)
+   {
+      // Check if current time is within trading hours
+      if (IsTradingHours())
+      {
+         // Enable trading during trading hours
+         Trade.SetExpertEnabled(true);
+      }
+      else
+      {
+         // Disable trading outside trading hours
+         Trade.SetExpertEnabled(false);
+      }
+   }
+}
+
+bool IsNewsRelevant()
+{
+   // Check if relevant market news is available
+   // Implement your logic here
+   return false;
+}
+
+bool IsTradingHours()
+{
+   // Check if current time is within trading hours
+   // Implement your logic here
+   return true;
+}
